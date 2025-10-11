@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="styleLista.css">
+<title>Wspólna lista filmów</title>
+
+</head>
+<body>
+
+<header>
+  <h1>Wspólna lista</h1>
+
+    <div class="profile-menu">
+      <button id="profileBtn"><span id="profilePicture"></span><span id="profileName"></span> <img src="img/arrowDown.png" alt="" id="arrowProfile"></button>
+      <div id="dropdown" class="dropdown-content">
+         <a href="#" id="sharedListBtn">Wspólna lista</a>
+        <a href="#" id="logoutBtn">Wyloguj się</a>
+      </div>
+    </div>
+</header>
+
+<main>
+  <div id="sharedList" class="movies-grid"></div>
+
+    <div id="movieModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <div id="modalTrailer"></div>
+    <h2 id="modalTitle"></h2>
+    <p id="modalOverview"></p>
+    <p id="modalGenres"></p>  
+  </div>
+</div>
+</main>
+
+
+
+<button id="footerToggle" class="footer-toggle"><img src="img/arrow.png" alt=""></button>
+
+
+<div id="footer" class="footer">
+  <div class="footer-content">
+    <h2>Menu</h2>
+    <ul>
+      <li><a href="mainSite.html"><img src="img/heart.png" alt="">Strona główna</a></li>
+      <li><a href="#">⭐ Najlepiej oceniane</a></li>
+      <li><a href="#">🎬 Ostatnio oglądane</a></li>
+    </ul>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+
+  async function fetchSharedItem(item) {
+  let url = "";
+
+  if(item.type === "movie") {
+    url = `https://api.themoviedb.org/3/movie/${item.movie_id}?api_key=${API_KEY}&language=pl-PL`;
+  } else if(item.type === "tv") {
+    url = `https://api.themoviedb.org/3/tv/${item.movie_id}?api_key=${API_KEY}&language=pl-PL`;
+  } else if(item.type === "anime") {
+    // jeśli traktujesz anime jak film w TMDB
+    url = `https://api.themoviedb.org/3/movie/${item.movie_id}?api_key=${API_KEY}&language=pl-PL`;
+  }
+
+  const res = await fetch(url);
+  const data = await res.json();
+  return data;
+}
+
+    const footer = document.getElementById("footer");
+    const footerToggle = document.getElementById("footerToggle");
+
+    footerToggle.addEventListener("click", () => {
+      footer.classList.toggle("open");
+      footerToggle.classList.toggle("open");
+    });
+
+
+    const currentUser = sessionStorage.getItem('currentUser') || 'guest';
+    console.log("Zalogowany użytkownik:", currentUser);
+
+    // Wyświetlenie nazwy użytkownika
+    document.getElementById("profileName").textContent = currentUser;
+    document.getElementById("profilePicture").innerHTML = '<img src="../img/avatar'+currentUser+'.jpg" alt="">'
+    // Toggle dropdown
+    const profileBtn = document.getElementById("profileBtn");
+    const dropdown = document.getElementById("dropdown");
+
+    profileBtn.addEventListener("click", () => {
+      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    });
+
+    document.getElementById("sharedListBtn").addEventListener("click", () => {
+      // otwórz nową stronę np. shared.html
+    window.location.href = "shared.html";
+
+    });
+
+  const modal = document.getElementById("movieModal");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalOverview = document.getElementById("modalOverview");
+  const modalTrailer = document.getElementById("modalTrailer");
+  const modalGenres = document.getElementById("modalGenres");
+  const closeBtn = document.querySelector(".close-btn");
+
+closeBtn.addEventListener("click", () => {
+  modal.style.display = "none";
+  modalTrailer.innerHTML = "";
+});
+
+window.addEventListener("click", e => {
+  if (e.target === modal) {
+    modal.style.display = "none";
+    modalTrailer.innerHTML = "";
+  }
+});
+
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      // usuń zapisany userId
+      sessionStorage.removeItem("currentUser");
+      // przekieruj na stronę logowania
+      window.location.href = "../index.html"; // lub "login.html" jeśli masz osobną stronę logowania
+    });
+
+
+    // Zamknij dropdown jeśli klikniesz poza nim
+    window.addEventListener("click", (e) => {
+      if (!profileBtn.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = "none";
+      }
+    });
+    
+
+
+      const SUPABASE_URL = "https://hxaqbpcufdlzfhmgddds.supabase.co";
+      const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4YXFicGN1ZmRsemZobWdkZGRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MzY3ODQsImV4cCI6MjA3MjQxMjc4NH0.o38-3lqMWMAESf5I3oXaGXqTp1fXw6mkZ310b7-EhXo"; // wstaw dokładnie swój anon public key
+      const { createClient } = supabase;
+      const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+      const API_KEY = "9b02e967dce99b746fc634d03605d150";
+
+
+    async function removeFromSharedList(movieId) {
+    const { data, error } = await supabaseClient
+      .from('shared_list')
+      .delete()
+      .eq('movie_id', Number(movieId))
+      .select();
+
+    console.log("Usuwany movie_id:", movieId);
+    
+    
+      if (error) {
+        console.error("Błąd usuwania filmu:", error);
+        alert("Nie udało się usunąć filmu.");
+      } else {
+        console.log("Usunięto film:", data); // teraz zobaczysz usunięty rekord
+        loadSharedList(); // odśwież listę
+      }
+    }
+
+
+
+async function loadSharedList() {
+  const container = document.getElementById("sharedList");
+  container.innerHTML = "";
+
+  const { data, error } = await supabaseClient.from('shared_list').select('*');
+
+  if (error) {
+    console.error("Błąd pobierania wspólnej listy:", error);
+    container.innerHTML = "<p>Nie udało się pobrać listy.</p>";
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    container.innerHTML = "<p>Brak filmów na wspólnej liście.</p>";
+    return;
+  }
+
+  for (const item of data) {
+    try {
+      // Pobierz szczegóły filmu/serialu w zależności od typu
+      const movie = await fetchSharedItem(item);
+
+      const poster = movie.poster_path 
+        ? `https://image.tmdb.org/t/p/w300${movie.poster_path}` 
+        : 'https://via.placeholder.com/300x450?text=No+Poster';
+
+      const title = movie.title || movie.name || "Brak tytułu";
+      const release = movie.release_date || movie.first_air_date || "brak danych";
+
+      const div = document.createElement("div");
+      div.classList.add("movie");
+      div.innerHTML = `
+        <img src="${poster}" alt="${title}">
+        <h3 title="${title}">${title}</h3>
+        <p>Dodane przez: ${item.added_by}</p>
+        <button class="remove-btn">Usuń</button>
+      `;
+      container.appendChild(div);
+
+      // Kliknięcie w obrazek lub tytuł -> otwórz modal
+      const img = div.querySelector("img");
+      const h3 = div.querySelector("h3");
+      img.addEventListener("click", () => openMovieModal(item.movie_id, item.type));
+      h3.addEventListener("click", () => openMovieModal(item.movie_id, item.type));
+
+      // Usuwanie
+      div.querySelector(".remove-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (confirm(`Czy na pewno chcesz usunąć "${title}"?`)) {
+          removeFromSharedList(Number(item.movie_id));
+        }
+      });
+
+    } catch (err) {
+      console.error("Błąd pobierania filmu/serialu do gridu:", err);
+    }
+  }
+}
+
+
+
+// ---------------------
+// Modal: pobierz szczegóły + videos i pokaż
+// ---------------------
+async function openMovieModal(movieId) {
+  try {
+    // DODATKOWE LOGI (usuń jeśli za dużo)
+    console.log("openMovieModal() movieId:", movieId);
+
+    // Pobieramy pełne szczegóły + videos
+    const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${API_KEY}&language=pl-PL&append_to_response=videos`);
+    const movie = await res.json();
+
+    // pokażemy obiekt w konsoli (debug)
+    console.log("TMDB movie object:", movie);
+
+    // Bezpieczeństwo: jeśli brak overview/genres - użyj fallbacku
+    modalTitle.textContent = movie.title || "Brak tytułu";
+    modalOverview.textContent = movie.overview && movie.overview.trim().length > 0 ? movie.overview : "Brak opisu.";
+    if (movie.genres && movie.genres.length > 0) {
+      modalGenres.innerHTML = "<b>Gatunki: </b>" + movie.genres.map(g => g.name).join(", ");
+    } else {
+      modalGenres.textContent = "Gatunki: brak danych";
+    }
+
+    // TRAILER - bezpieczne wyszukiwanie (Trailer -> Teaser -> pierwszy YouTube)
+    let trailer = null;
+    if (movie.videos && Array.isArray(movie.videos.results) && movie.videos.results.length > 0) {
+      trailer = movie.videos.results.find(v => v.type === "Trailer" && v.site === "YouTube")
+             || movie.videos.results.find(v => v.type === "Teaser" && v.site === "YouTube")
+             || movie.videos.results.find(v => v.site === "YouTube");
+    }
+
+    // Wyczyść poprzedni iframe
+    modalTrailer.innerHTML = "";
+
+    if (trailer && trailer.key) {
+      modalTrailer.innerHTML = `<iframe src="https://www.youtube.com/embed/${trailer.key}" allowfullscreen></iframe>`;
+    } else {
+      // Jeśli brak video w TMDB - pokaż prosty link do wyszukania na YouTube
+      const safeTitle = encodeURIComponent(movie.title || "");
+      modalTrailer.innerHTML = `<p>Brak trailera w TMDB. <a href="https://www.youtube.com/results?search_query=${safeTitle}+trailer" target="_blank" rel="noopener">Szukaj na YouTube</a></p>`;
+      console.log("Brak trailera w TMDB dla id:", movieId, "movie.videos:", movie.videos);
+    }
+
+    modal.style.display = "block";
+  } catch (err) {
+    console.error("Błąd ładowania filmu w modalu:", err);
+    modalOverview.textContent = "Nie udało się załadować opisu.";
+    modalGenres.textContent = "";
+    modalTrailer.innerHTML = "<p>Brak trailera.</p>";
+    modal.style.display = "block";
+  }
+}
+
+
+
+  // Uruchomienie
+  loadSharedList();
+</script>
+
+</body>
+</html>
