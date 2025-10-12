@@ -211,7 +211,7 @@ async function saveSwipe(action) {
     showMovie(sharedMovies[currentIndex]);
   } else {
     console.log("🎉 Koniec listy — pokazuję polubione filmy");
-    await showLikedMovies(otherUser);
+    window.location.href = "swipeResult.html"
   }
 }
 let otherUser = ""
@@ -287,6 +287,65 @@ async function showLikedMovies(otherUser) {
     container.innerHTML = "<p>Wystąpił błąd podczas ładowania wspólnych polubionych filmów.</p>";
   }
   document.querySelector(".buttons").style.display = "none"
+  document.getElementById("swipeAgain").style.display = "inline-block"
+  document.getElementById("swipeAgain").addEventListener("click", async () => {
+  await startMutualSwipe(otherUser);
+});
+}
+
+async function startMutualSwipe(otherUser) {
+    document.getElementById("swipeAgain").style.display = "none"
+    document.querySelector(".buttons").style.display = "inline-block"
+  try {
+   
+    const { data: myLikes, error: myError } = await supabaseClient
+      .from("swipes")
+      .select("movie_id, type")
+      .eq("action", "liked")
+      .eq("user_id", currentUser);
+
+    if (myError) throw myError;
+
+    // 2️⃣ Pobieramy polubione przez drugiego użytkownika
+     // podaj tu id drugiego użytkownika
+    const { data: otherLikes, error: otherError } = await supabaseClient
+      .from("swipes")
+      .select("movie_id, type")
+      .eq("action", "liked")
+      .eq("user_id", otherUser);
+
+    if (otherError) throw otherError;
+
+    const otherMovieIds = new Set(otherLikes.map(m => m.movie_id));
+
+    // 3️⃣ Wspólne polubione filmy
+    const mutualLikes = myLikes.filter(m => otherMovieIds.has(m.movie_id));
+
+    if (!mutualLikes.length) {
+      alert("Brak wspólnie polubionych filmów do swipe’owania 😅");
+      return;
+    }
+
+    // 4️⃣ Resetujemy swipe
+    sharedMovies = mutualLikes;
+    currentIndex = 0;
+
+    // 5️⃣ Czyścimy stare swipes dla bieżącego użytkownika
+    const { error: delError } = await supabaseClient
+      .from("swipes")
+      .delete()
+      .eq("user_id", currentUser);
+
+    if (delError) console.error("Błąd czyszczenia swipes:", delError);
+
+    // 6️⃣ Pokaż pierwszy film
+    document.querySelector(".swiper-container").style.display = "block";
+    document.getElementById("sharedListContainer").style.display = "none";
+    showMovie(sharedMovies[currentIndex]);
+
+  } catch (err) {
+    console.error("Błąd podczas ponownego swipe’owania:", err);
+  }
 }
 
     async function openMovieModal(movieId) {
