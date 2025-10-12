@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MovieSwiper</title>
+  <link rel="stylesheet" href="movieSwiper.css">
+</head>
+<body>
+  <header>
+  <h1>MOVIE SWIPER</h1>
+
+    <div class="profile-menu">
+      <button id="profileBtn"><span id="profilePicture"></span><span id="profileName"></span> <img src="../mainPage/img/arrowDown.png" alt="" id="arrowProfile"></button>
+      <div id="dropdown" class="dropdown-content">
+         <a href="#" id="sharedListBtn">Wspólna lista</a>
+        <a href="#" id="logoutBtn">Wyloguj się</a>
+      </div>
+    </div>
+</header>
+
+<main id="sharedListContainer">
+  <h1>Wspólna lista filmów: </h1>
+  <button id="startSwipe">SWIPE!</button>
+  <div id="sharedList" class="movies-grid"></div>
+      <div id="movieModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <div id="modalTrailer"></div>
+    <h2 id="modalTitle"></h2>
+    <p id="modalOverview"></p>
+    <p id="modalGenres"></p>  
+  </div>
+</div>
+</main>
+
+  <div class="swiper-container" style="display: none;">
+<div id="movieCard" class="movie-card"></div>
+
+<div class="buttons">
+  <button id="dislikeBtn">❌ Nie</button>
+  <button id="likeBtn">❤️ Tak</button>
+</div>
+</div>
+
+
+<button id="footerToggle" class="footer-toggle"><img src="../mainPage/img/arrow.png" alt=""></button>
+
+
+<div id="footer" class="footer">
+  <div class="footer-content">
+    <h2>Menu</h2>
+    <ul>
+      <li><a href="../mainPage/mainSite.html"><img src="../mainPage/img/heart.png" alt="">Strona główna</a></li>
+      <li><a href="#">⭐ Najlepiej oceniane</a></li>
+      <li><a href="#">🎬 Ostatnio oglądane</a></li>
+    </ul>
+  </div>
+</div>
+
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="movieSwiper.js"></script>
+</body>
+</html>
