@@ -5,6 +5,15 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const API_KEY = "9b02e967dce99b746fc634d03605d150";
 const currentUser = sessionStorage.getItem("currentUser") || "guest";
+let otherUser = ""
+if(currentUser == "Julcia")
+{
+    otherUser = "Emiś"
+}
+else
+{
+    otherUser = "Julcia"
+}
 
 let sharedMovies = [];
 let currentIndex = 0;
@@ -213,15 +222,6 @@ async function saveSwipe(action) {
     console.log("🎉 Koniec listy — pokazuję polubione filmy");
     window.location.href = "swipeResult.html"
   }
-}
-let otherUser = ""
-if(currentUser == "Julcia")
-{
-    otherUser = "Emiś"
-}
-else
-{
-    otherUser = "Julcia"
 }
 
 // Pokaż tylko polubione filmy
