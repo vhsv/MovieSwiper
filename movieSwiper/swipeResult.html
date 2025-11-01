@@ -8,14 +8,7 @@
 </head>
 <body>
   <header>
-    <h1>MOVIE SWIPER</h1>
-    <div class="profile-menu">
-      <button id="profileBtn"><span id="profilePicture"></span><span id="profileName"></span> <img src="../mainPage/img/arrowDown.png" alt="" id="arrowProfile"></button>
-      <div id="dropdown" class="dropdown-content">
-        <a href="#" id="sharedListBtn">Wspólna lista</a>
-        <a href="#" id="logoutBtn">Wyloguj się</a>
-      </div>
-    </div>
+    <a href="../movieSwiper/movieSwiper.html"><h1>Movie Swiper</h1></a>
   </header>
 
   <div class="swiper-container">
@@ -29,16 +22,16 @@
 
   <button id="footerToggle" class="footer-toggle"><img src="../mainPage/img/arrow.png" alt=""></button>
 
-  <div id="footer" class="footer">
-    <div class="footer-content">
-      <h2>Menu</h2>
-      <ul>
-        <li><a href="../mainPage/mainSite.html"><img src="../mainPage/img/heart.png" alt="">Strona główna</a></li>
-        <li><a href="#">⭐ Najlepiej oceniane</a></li>
-        <li><a href="#">🎬 Ostatnio oglądane</a></li>
-      </ul>
-    </div>
+<div id="footer" class="footer">
+  <div class="footer-content">
+    <h2>Menu</h2>
+    <ul>
+      <li><a href="../mainPage/mainSite.html"><img src="../mainPage/img/heart.png" alt="">Strona główna</a></li>
+      <li><a href="../mainPage/shared.html">Wspólna lista</a></li>
+      <li><a href="../shh/shh.html">Shh...</a></li>
+    </ul>
   </div>
+</div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
@@ -53,7 +46,13 @@
     let sharedMovies = [];
     let currentIndex = 0;
     let currentRound = 1;
+ const footer = document.getElementById("footer");
+    const footerToggle = document.getElementById("footerToggle");
 
+    footerToggle.addEventListener("click", () => {
+      footer.classList.toggle("open");
+      footerToggle.classList.toggle("open");
+    });
     // Funkcja do pokazywania filmu
     async function showMovie(movieData) {
       if (!movieData) return;
@@ -155,7 +154,7 @@
         <h2>⏳ Oczekiwanie na drugiego użytkownika...</h2>
         <p>Czekam aż ${otherUser} też zakończy swipe'owanie</p>
         <div class="loading-spinner"></div>
-        <button id="checkReadyBtn">Sprawdź czy gotowy</button>
+        <button id="checkReadyBtn">Sprawdź czy gotowa</button>
       `;
 
       // USUŃ STAREGO LISTENERA i DODAJ NOWEGO
@@ -170,158 +169,407 @@
       };
     }
 
-    async function showLikedMovies(otherUser) {
-      const container = document.getElementById("movieCard");
-      container.innerHTML = "<h2>Ładowanie wspólnych polubionych filmów...</h2>";
+    
+async function showLikedMovies(otherUser) {
+  const container = document.getElementById("movieCard");
+  container.innerHTML = "<h2>Ładowanie wspólnych polubionych filmów...</h2>";
 
-      try {
-        const { data: myLikes, error: myError } = await supabaseClient
-          .from("swipes")
-          .select("movie_id, type")
-          .eq("action", "liked")
-          .eq("user_id", currentUser)
-          .eq("round", currentRound);
+   document.querySelector(".buttons").style.display = "none";
+  document.getElementById("swipeAgain").style.display = "none";
 
-        if (myError) throw myError;
+  try {
+    const { data: myLikes, error: myError } = await supabaseClient
+      .from("swipes")
+      .select("movie_id, type")
+      .eq("action", "liked")
+      .eq("user_id", currentUser)
+      .eq("round", currentRound);
 
-        const { data: otherLikes, error: otherError } = await supabaseClient
-          .from("swipes")
-          .select("movie_id, type")
-          .eq("action", "liked")
-          .eq("user_id", otherUser)
-          .eq("round", currentRound);
+    if (myError) throw myError;
 
-        if (otherError) throw otherError;
+    const { data: otherLikes, error: otherError } = await supabaseClient
+      .from("swipes")
+      .select("movie_id, type")
+      .eq("action", "liked")
+      .eq("user_id", otherUser)
+      .eq("round", currentRound);
 
-        console.log(`❤️ Moje liked z rundy ${currentRound}:`, myLikes);
-        console.log(`❤️ Jego liked z rundy ${currentRound}:`, otherLikes);
+    if (otherError) throw otherError;
 
-        if (!myLikes || myLikes.length === 0) {
-          container.innerHTML = `
-            <h2>Twoje wyniki rundy ${currentRound}</h2>
-            <p>Nie polubiłeś żadnych filmów w tej rundzie 😅</p>
-            <p><strong>Uwaga:</strong> Możesz kontynuować, ale wyniki mogą się różnić od drugiej osoby</p>
-            <button id="forceContinue">Kontynuuj mimo to</button>
-          `;
-          document.getElementById("forceContinue").onclick = async () => {
-            await startNextSwipeRound(otherUser);
-          };
-          return;
+    console.log(`❤️ Moje liked z rundy ${currentRound}:`, myLikes);
+    console.log(`❤️ Jego liked z rundy ${currentRound}:`, otherLikes);
+
+    // Sprawdź czy oboje są gotowi (mają taką samą liczbę swipe'ów)
+    const isReady = await checkBothUsersReady(otherUser);
+    
+    // JEŚLI NIE GOTOWI - POKAŻ TYLKO OCZEKIWANIE (bez filmów)
+    if (!isReady) {
+      // Pobierz liczbę swipe'ów każdego użytkownika do pokazania postępu
+      const { data: mySwipes } = await supabaseClient
+        .from("swipes")
+        .select("movie_id")
+        .eq("user_id", currentUser)
+        .eq("round", currentRound);
+
+      const { data: otherSwipes } = await supabaseClient
+        .from("swipes")
+        .select("movie_id")
+        .eq("user_id", otherUser)
+        .eq("round", currentRound);
+
+      const mySwipeCount = mySwipes?.length || 0;
+      const otherSwipeCount = otherSwipes?.length || 0;
+
+      container.innerHTML = `
+        <h2>⏳ Oczekiwanie na drugiego użytkownika...</h2>
+        <p>Czekam aż ${otherUser} też zakończy swipe'owanie</p>
+        <div style="margin: 20px 0;">
+          <p><strong>Postęp:</strong></p>
+          <p>${currentUser}: ${mySwipeCount} filmów</p>
+          <p>${otherUser}: ${otherSwipeCount} filmów</p>
+        </div>
+        <div class="loading-spinner"></div>
+        <button id="checkReadyBtn">Sprawdź czy ${otherUser} jest gotowa</button>
+      `;
+
+      document.getElementById("checkReadyBtn").onclick = async () => {
+        const ready = await checkBothUsersReady(otherUser);
+        if (ready) {
+          // Oboje gotowi - odśwież i pokaż wyniki
+          await showLikedMovies(otherUser);
+        } else {
+          alert(`${otherUser} jeszcze nie jest gotowa!`);
         }
-
-        if (!otherLikes || otherLikes.length === 0) {
-          showWaitingScreen(otherUser);
-          return;
-        }
-
-        const myMovieIds = new Set(myLikes.map(m => m.movie_id));
-        const mutualLikes = otherLikes.filter(m => myMovieIds.has(m.movie_id));
-
-        console.log("🎯 Wspólne liked:", mutualLikes);
-
-        if (mutualLikes.length === 0) {
-          container.innerHTML = `
-            <h2>Wyniki rundy ${currentRound}</h2>
-            <p>Brak wspólnych polubionych filmów 😅</p>
-            <p>Ty polubiłeś: ${myLikes.length} filmów</p>
-            <p>${otherUser} polubił: ${otherLikes.length} filmów</p>
-            <button id="forceContinue">Kontynuuj mimo to</button>
-          `;
-          document.getElementById("forceContinue").onclick = async () => {
-            await startNextSwipeRound(otherUser);
-          };
-          return;
-        }
-
-        // Sprawdź czy oboje są gotowi
-        const isReady = await checkBothUsersReady(otherUser);
-        
-        if (!isReady) {
-          container.innerHTML = `
-            <h2>🎬 Twoje wyniki rundy ${currentRound}:</h2>
-            <p>Masz ${mutualLikes.length} wspólnych filmów</p>
-            <p>⏳ Oczekiwanie na ${otherUser}...</p>
-            <div class="loading-spinner"></div>
-            <button id="checkReadyBtn">Sprawdź czy gotowy</button>
-            <button id="forceContinue" style="margin-top: 10px;">Kontynuuj mimo to</button>
-          `;
-
-          document.getElementById("checkReadyBtn").onclick = async () => {
-            const ready = await checkBothUsersReady(otherUser);
-            if (ready) {
-              await startNextSwipeRound(otherUser);
-            } else {
-              alert("Druga osoba jeszcze nie jest gotowa!");
-            }
-          };
-
-          document.getElementById("forceContinue").onclick = async () => {
-            await startNextSwipeRound(otherUser);
-          };
-          return;
-        }
-
-        // OBOJE GOTOWI - pokaż wspólne filmy
-        if (mutualLikes.length === 1) {
-          const finalMovie = mutualLikes[0];
-          const res = await fetch(`https://api.themoviedb.org/3/${finalMovie.type}/${finalMovie.movie_id}?api_key=${API_KEY}&language=pl-PL`);
-          const movieData = await res.json();
-          
-          container.innerHTML = `
-            <h2>🎉 ZWYCIĘZCA! 🎉</h2>
-            <div class="final-movie">
-              <img src="https://image.tmdb.org/t/p/w500${movieData.poster_path}" alt="${movieData.title || movieData.name}">
-              <h3>${movieData.title || movieData.name}</h3>
-              <p>To wasz wspólnie wybrany film!</p>
-            </div>
-          `;
-          document.querySelector(".buttons").style.display = "none";
-          document.getElementById("swipeAgain").style.display = "none";
-          return;
-        }
-
-        container.innerHTML = `<h2>🎬 Wspólnie polubione filmy (${mutualLikes.length}):</h2>`;
-        const grid = document.createElement("div");
-        grid.classList.add("liked-grid");
-
-        const uniqueMovies = [];
-        const seenIds = new Set();
-        
-        for (const item of mutualLikes) {
-          if (!seenIds.has(item.movie_id)) {
-            seenIds.add(item.movie_id);
-            uniqueMovies.push(item);
-          }
-        }
-
-        await Promise.all(uniqueMovies.map(async item => {
-          const res = await fetch(`https://api.themoviedb.org/3/${item.type}/${item.movie_id}?api_key=${API_KEY}&language=pl-PL`);
-          const movie = await res.json();
-
-          const div = document.createElement("div");
-          div.classList.add("liked-item");
-          div.innerHTML = `
-            <img src="https://image.tmdb.org/t/p/w300${movie.poster_path}" alt="${movie.title || movie.name}">
-            <h4>${movie.title || movie.name}</h4>
-          `;
-          grid.appendChild(div);
-        }));
-
-        container.appendChild(grid);
-
-        // Pokaż przycisk SWIPE AGAIN
-        document.querySelector(".buttons").style.display = "none";
-        document.getElementById("swipeAgain").style.display = "inline-block";
-        
-        document.getElementById("swipeAgain").onclick = async () => {
-          await startNextSwipeRound(otherUser);
-        };
-
-      } catch (err) {
-        console.error("Błąd:", err);
-        container.innerHTML = "<p>Wystąpił błąd podczas ładowania wspólnych polubionych filmów.</p>";
-      }
+      };
+      return;
     }
+
+    // OBOJE GOTOWI - pokaż wyniki
+
+    // Jeśli ja nie mam liked
+    if (!myLikes || myLikes.length === 0) {
+      container.innerHTML = `
+        <h2>Wyniki rundy ${currentRound}</h2>
+        <p>Nie polubiłeś żadnych filmów w tej rundzie 😅</p>
+        <p>${otherUser} polubił: ${otherLikes?.length || 0} filmów</p>
+      `;
+      showSwipeAgainButton(otherUser);
+      return;
+    }
+
+    // Jeśli druga osoba nie ma liked
+    if (!otherLikes || otherLikes.length === 0) {
+      container.innerHTML = `
+        <h2>Wyniki rundy ${currentRound}</h2>
+        <p>Polubiłeś ${myLikes.length} filmów</p>
+        <p>${otherUser} nie polubił żadnych filmów 😅</p>
+      `;
+      showSwipeAgainButton(otherUser);
+      return;
+    }
+
+    // Oblicz wspólne filmy
+    const myMovieIds = new Set(myLikes.map(m => m.movie_id));
+    const mutualLikes = otherLikes.filter(m => myMovieIds.has(m.movie_id));
+
+    console.log("🎯 Wspólne liked:", mutualLikes);
+
+    // Jeśli brak wspólnych filmów
+    if (mutualLikes.length === 0) {
+      container.innerHTML = `
+        <h2>Wyniki rundy ${currentRound}</h2>
+        <p>Brak wspólnych polubionych filmów 😅</p>
+        <p>Ty polubiłeś: ${myLikes.length} filmów</p>
+        <p>${otherUser} polubił: ${otherLikes.length} filmów</p>
+      `;
+      showSwipeAgainButton(otherUser);
+      return;
+    }
+
+    // POKAŻ WSPÓLNE FILMY
+    showFinalResultsWithSwipeAgain(mutualLikes, otherUser);
+
+  } catch (err) {
+    console.error("Błąd:", err);
+    container.innerHTML = "<p>Wystąpił błąd podczas ładowania wspólnych polubionych filmów.</p>";
+  }
+}
+
+// Funkcja do pokazywania przycisku SWIPE AGAIN
+function showSwipeAgainButton(otherUser) {
+  document.querySelector(".buttons").style.display = "none";
+  document.getElementById("swipeAgain").style.display = "inline-block";
+  
+  document.getElementById("swipeAgain").onclick = async () => {
+    await startNextSwipeRound(otherUser);
+  };
+}
+
+// Funkcja do pokazywania finalnych wyników
+function showFinalResultsWithSwipeAgain(mutualLikes, otherUser) {
+  const container = document.getElementById("movieCard");
+
+  // JEŚLI ZOSTAŁ 1 FILM - KONIEC
+  if (mutualLikes.length === 1) {
+    const finalMovie = mutualLikes[0];
+    fetch(`https://api.themoviedb.org/3/${finalMovie.type}/${finalMovie.movie_id}?api_key=${API_KEY}&language=pl-PL`)
+      .then(res => res.json())
+      .then(movieData => {
+        container.innerHTML = `
+          <h2>🎉 ZWYCIĘZCA! 🎉</h2>
+          <div class="final-movie">
+            <img src="https://image.tmdb.org/t/p/w500${movieData.poster_path}" alt="${movieData.title || movieData.name}">
+            <h3>${movieData.title || movieData.name}</h3>
+            
+          </div>
+        `;
+        document.querySelector(".buttons").style.display = "none";
+        document.getElementById("swipeAgain").style.display = "none";
+      });
+    return;
+  }
+
+  // DLA 2 LUB WIĘCEJ FILMÓW - pokaż wyniki i SWIPE AGAIN
+  container.innerHTML = `<h2>🎬 Wspólnie polubione filmy (${mutualLikes.length}):</h2>`;
+
+  const grid = document.createElement("div");
+  grid.classList.add("liked-grid");
+
+  const uniqueMovies = [];
+  const seenIds = new Set();
+  
+  for (const item of mutualLikes) {
+    if (!seenIds.has(item.movie_id)) {
+      seenIds.add(item.movie_id);
+      uniqueMovies.push(item);
+    }
+  }
+
+  Promise.all(uniqueMovies.map(async item => {
+    const res = await fetch(`https://api.themoviedb.org/3/${item.type}/${item.movie_id}?api_key=${API_KEY}&language=pl-PL`);
+    const movie = await res.json();
+
+    const div = document.createElement("div");
+    div.classList.add("liked-item");
+    div.innerHTML = `
+      <img src="https://image.tmdb.org/t/p/w300${movie.poster_path}" alt="${movie.title || movie.name}">
+      <h4>${movie.title || movie.name}</h4>
+    `;
+    grid.appendChild(div);
+  })).then(() => {
+    container.appendChild(grid);
+    showSwipeAgainButton(otherUser);
+  });
+}
+
+function showFinalResultsWithSwipeAgain(mutualLikes, otherUser) {
+  const container = document.getElementById("movieCard");
+
+  // JEŚLI ZOSTAŁ 1 FILM - KONIEC
+  if (mutualLikes.length === 1) {
+    const finalMovie = mutualLikes[0];
+    fetch(`https://api.themoviedb.org/3/${finalMovie.type}/${finalMovie.movie_id}?api_key=${API_KEY}&language=pl-PL`)
+      .then(res => res.json())
+      .then(movieData => {
+        container.innerHTML = `
+          <h2>🎉 ZWYCIĘZCA! 🎉</h2>
+          <div class="final-movie">
+            <img src="https://image.tmdb.org/t/p/w500${movieData.poster_path}" alt="${movieData.title || movieData.name}">
+            <h3>${movieData.title || movieData.name}</h3>
+            <p>To wasz wspólnie wybrany film!</p>
+          </div>
+        `;
+        document.querySelector(".buttons").style.display = "none";
+        document.getElementById("swipeAgain").style.display = "none";
+      });
+    return;
+  }
+
+  // DLA 2 LUB WIĘCEJ FILMÓW - pokaż wyniki i SWIPE AGAIN
+  container.innerHTML = `
+    <h2>🎬 Wspólnie polubione filmy (${mutualLikes.length}):</h2>
+
+  `;
+
+  const grid = document.createElement("div");
+  grid.classList.add("liked-grid");
+
+  const uniqueMovies = [];
+  const seenIds = new Set();
+  
+  for (const item of mutualLikes) {
+    if (!seenIds.has(item.movie_id)) {
+      seenIds.add(item.movie_id);
+      uniqueMovies.push(item);
+    }
+  }
+
+  Promise.all(uniqueMovies.map(async item => {
+    const res = await fetch(`https://api.themoviedb.org/3/${item.type}/${item.movie_id}?api_key=${API_KEY}&language=pl-PL`);
+    const movie = await res.json();
+
+    const div = document.createElement("div");
+    div.classList.add("liked-item");
+    div.innerHTML = `
+      <img src="https://image.tmdb.org/t/p/w300${movie.poster_path}" alt="${movie.title || movie.name}">
+      <h4>${movie.title || movie.name}</h4>
+    `;
+    grid.appendChild(div);
+  })).then(() => {
+    container.appendChild(grid);
+    
+    // POKAŻ SWIPE AGAIN ZAWSZE gdy jest więcej niż 1 film
+    if (mutualLikes.length > 1) {
+      document.querySelector(".buttons").style.display = "none";
+      document.getElementById("swipeAgain").style.display = "inline-block";
+      
+      document.getElementById("swipeAgain").onclick = async () => {
+        await startNextSwipeRound(otherUser);
+      };
+    } else {
+      document.querySelector(".buttons").style.display = "none";
+      document.getElementById("swipeAgain").style.display = "none";
+    }
+  });
+}
+function showFinalResults(mutualLikes, otherUser) {
+  const container = document.getElementById("movieCard");
+
+  // JEŚLI ZOSTAŁ 1 FILM - KONIEC, pokaż zwycięzcę
+  if (mutualLikes.length === 1) {
+    const finalMovie = mutualLikes[0];
+    fetch(`https://api.themoviedb.org/3/${finalMovie.type}/${finalMovie.movie_id}?api_key=${API_KEY}&language=pl-PL`)
+      .then(res => res.json())
+      .then(movieData => {
+        container.innerHTML = `
+          <h2>🎉 ZWYCIĘZCA! 🎉</h2>
+          <div class="final-movie">
+            <img src="https://api.themoviedb.org/t/p/w500${movieData.poster_path}" alt="${movieData.title || movieData.name}">
+            <h3>${movieData.title || movieData.name}</h3>
+            <p>To wasz wspólnie wybrany film!</p>
+          </div>
+        `;
+        document.querySelector(".buttons").style.display = "none";
+        document.getElementById("swipeAgain").style.display = "none";
+      });
+    return;
+  }
+
+  // DLA 2 LUB WIĘCEJ FILMÓW - ZAWSZE pokazuj oczekiwanie na drugiego użytkownika
+  container.innerHTML = `
+    <h2>🎬 Wspólnie polubione filmy (${mutualLikes.length}):</h2>
+    <p>⏳ Oczekiwanie na ${otherUser}...</p>
+    <p>Oboje musicie kliknąć "SWIPE AGAIN" żeby kontynuować</p>
+    <div class="loading-spinner"></div>
+    <button id="checkReadyBtn">Sprawdź czy ${otherUser} jest gotowa</button>
+  `;
+
+  const grid = document.createElement("div");
+  grid.classList.add("liked-grid");
+
+  const uniqueMovies = [];
+  const seenIds = new Set();
+  
+  for (const item of mutualLikes) {
+    if (!seenIds.has(item.movie_id)) {
+      seenIds.add(item.movie_id);
+      uniqueMovies.push(item);
+    }
+  }
+
+  // Pokaż filmy w tle
+  Promise.all(uniqueMovies.map(async item => {
+    const res = await fetch(`https://api.themoviedb.org/3/${item.type}/${item.movie_id}?api_key=${API_KEY}&language=pl-PL`);
+    const movie = await res.json();
+
+    const div = document.createElement("div");
+    div.classList.add("liked-item");
+    div.innerHTML = `
+      <img src="https://image.tmdb.org/t/p/w300${movie.poster_path}" alt="${movie.title || movie.name}">
+      <h4>${movie.title || movie.name}</h4>
+    `;
+    grid.appendChild(div);
+  })).then(() => {
+    container.appendChild(grid);
+    
+    // Dodaj listener do przycisku
+    document.getElementById("checkReadyBtn").onclick = async () => {
+      const isReady = await checkBothUsersReadyForNextRound(otherUser);
+      if (isReady) {
+        // Oboje gotowi - zacznij nową rundę
+        await startNextSwipeRound(otherUser);
+      } else {
+        alert(`${otherUser} jeszcze nie jest gotowa!`);
+      }
+    };
+  });
+
+  document.querySelector(".buttons").style.display = "none";
+  document.getElementById("swipeAgain").style.display = "none";
+}
+// Funkcja do sprawdzania czy oboje są gotowi do następnej rundy
+async function checkBothUsersReady(otherUser) {
+  try {
+    console.log(`🔍 checkBothUsersReady - runda ${currentRound}`);
+
+    // Sprawdź LICZBĘ wszystkich swipe'ów (liked + disliked) w tej rundzie
+    const { data: mySwipes, error: myError } = await supabaseClient
+      .from("swipes")
+      .select("movie_id")
+      .eq("user_id", currentUser)
+      .eq("round", currentRound);
+
+    if (myError) throw myError;
+
+    const { data: otherSwipes, error: otherError } = await supabaseClient
+      .from("swipes")
+      .select("movie_id")
+      .eq("user_id", otherUser)
+      .eq("round", currentRound);
+
+    if (otherError) throw otherError;
+
+    const mySwipeCount = mySwipes?.length || 0;
+    const otherSwipeCount = otherSwipes?.length || 0;
+
+    console.log(`📊 ${currentUser} ma ${mySwipeCount} swipe'ów w rundzie ${currentRound}`);
+    console.log(`📊 ${otherUser} ma ${otherSwipeCount} swipe'ów w rundzie ${currentRound}`);
+
+    // Oboje gotowi jeśli mają TAKĄ SAMĄ liczbę swipe'ów (skończyli rundę)
+    // UWAGA: To zakłada że oboje swipe'ują tę samą liczbę filmów!
+    const isReady = mySwipeCount > 0 && otherSwipeCount > 0 && mySwipeCount === otherSwipeCount;
+    
+    console.log("✅ Oboje gotowi (skończyli rundę)?:", isReady);
+    return isReady;
+
+  } catch (err) {
+    console.error("❌ Błąd sprawdzania gotowości:", err);
+    return false;
+  }
+}
+
+// Funkcja do oznaczenia siebie jako gotowego do następnej rundy
+async function markMeAsReadyForNextRound() {
+  try {
+    const { error } = await supabaseClient
+      .from("shared_list")
+      .insert([
+        {
+          movie_id: `ready_${currentUser}_round${currentRound}`,
+          type: 'ready',
+          added_by: currentUser
+        }
+      ]);
+
+    if (error && error.code !== '23505') {
+      console.error("❌ Błąd oznaczania gotowości:", error);
+    } else {
+      console.log("✅ Oznaczono jako gotowy do następnej rundy");
+    }
+  } catch (err) {
+    console.error("❌ Błąd:", err);
+  }
+}
 
     async function startNextSwipeRound(otherUser) {
       try {
