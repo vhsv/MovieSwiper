@@ -53,7 +53,6 @@ main button
    cursor: pointer;
    margin-top: 5px;
 }
-
 main button:hover
 {
     background-color: #90060d;
@@ -343,6 +342,66 @@ span img
   flex-direction: column;
   align-items: center;
 }
+#swipeAgain2
+{
+  display: inline-block;
+   width: 50%;
+    background-color: #e50914;
+    color: white;
+    font-weight: bold;
+    font-size: 15px;
+    padding: 8px;
+    border: none;
+    border-radius: 4px;
+   cursor: pointer;
+   margin-top: 5px;
+}
+#wrocBtn
+{
+    display: inline-block;
+   width: 50%;
+    background-color: #e50914;
+    color: white;
+    font-weight: bold;
+    font-size: 15px;
+    padding: 8px;
+    border: none;
+    border-radius: 4px;
+   cursor: pointer;
+   margin-top: 5px;
+}
+#randomFromTwo
+{
+  display: inline-block;
+   width: 50%;
+    background-color: #e50914;
+    color: white;
+    font-weight: bold;
+    font-size: 15px;
+    padding: 8px;
+    border: none;
+    border-radius: 4px;
+   cursor: pointer;
+   margin-top: 5px;
+}
+
+/* Dodaj do movieSwiper.css */
+@keyframes slow-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+.slow-pulse {
+  animation: slow-pulse 2s ease-in-out infinite;
+}
+
+
 
 .footer.open {
   bottom: 0;
@@ -363,9 +422,6 @@ span img
   margin: 0;
 }
 
-.footer-content li {
-  margin: 10px 0;
-}
 
 .footer-content a {
   display: flex;

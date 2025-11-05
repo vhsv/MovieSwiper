@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Random Movie Picker</title>
+  <link rel="stylesheet" href="movieRandomStyle.css">
+</head>
+<body>
+  <header>
+    <h1>LOSOWANIE FILMU</h1>
+    <div class="profile-menu">
+      <button id="profileBtn"><span id="profilePicture"></span><span id="profileName"></span> <img src="../mainPage/img/arrowDown.png" alt="" id="arrowProfile"></button>
+      <div id="dropdown" class="dropdown-content">
+        <a href="../mainPage/shared.html" id="sharedListBtn">Wspólna lista</a>
+        <a href="#" id="logoutBtn">Wyloguj się</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="random-container">
+      <div id="randomResult" class="random-result">
+        <p>Kliknij START żeby wylosować film &hearts;</p>
+      </div>
+      
+      <button id="startRandom" class="start-btn">🎬 START LOSOWANIA</button>
+      
+      <div id="moviesList" class="movies-list" style="display: none;">
+        <h3>Filmy do losowania:</h3>
+        <div id="moviesGrid" class="movies-grid"></div>
+      </div>
+    </div>
+
+    <div id="movieModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <div id="modalTrailer"></div>
+        <h2 id="modalTitle"></h2>
+        <p id="modalOverview"></p>
+        <p id="modalGenres"></p>  
+      </div>
+    </div>
+  </main>
+
+  <button id="footerToggle" class="footer-toggle"><img src="../mainPage/img/arrow.png" alt=""></button>
+
+  <div id="footer" class="footer">
+    <div class="footer-content">
+      <h2>Menu</h2>
+      <ul>
+        <li><a href="../mainPage/mainSite.html"><img src="../mainPage/img/heart.png" alt="">Strona główna</a></li>
+        <li><a href="../movieSwiper/movieSwiper.html">Movie Swiper</a></li>
+        <li><a href="../mainPage/shared.html">Wspólna lista</a></li>
+        <li><a href="../shh/shh.html">Shh...</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="movieRandom.js"></script>
+</body>
+</html>
